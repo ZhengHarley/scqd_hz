@@ -1,0 +1,11 @@
+[package]
+name = "scqd_hz"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+crossbeam-epoch = "0.9.18"
+crossbeam-utils = "0.8.21"
+futures = "0.3.32"
+tokio = { version = "1.50.0", features = ["full"] }
+
