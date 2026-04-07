@@ -4,7 +4,7 @@ use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::Arc;
 use crate::runtime::park::CachedParkThread;
 use crate::sync::mpsc2::error::TryRecvError;
-use crate::sync::mpsc2::{bounded, scqdf, unbounded};        // ! Make sure scqdf is correct call here
+use crate::sync::mpsc2::{bounded, scqdf, unbounded};       
 use crate::sync::notify::Notify;
 use crate::util::cacheline::CachePadded;
 

@@ -101,7 +101,7 @@ impl LFRing {
     /// # Safety
     /// 
     /// Safe if the system has enough memory to allocate the ring structure and array.
-    pub(crate) fn init_empty(order: usize) -> Box<LFRing> {
+    pub(crate) fn new_empty(order: usize) -> Box<LFRing> {
         unsafe {
             // 1) Allocate LFRing on the heap
             let lfq = std::alloc::alloc(Layout::new::<LFRing>()) as *mut LFRing;
@@ -137,7 +137,7 @@ impl LFRing {
     /// # Safety
     /// 
     /// Safe if the system has enough memory to allocate the ring structure and array.
-    pub(crate) fn init_full(order: usize) -> Box<LFRing> {
+    pub(crate) fn new_full(order: usize) -> Box<LFRing> {
         unsafe {
             // 1) Allocate LFRing on the heap
             let lfq = std::alloc::alloc(Layout::new::<LFRing>()) as *mut LFRing;

@@ -3,8 +3,8 @@
 //!
 //! The SCQD-F queue uses three lock-free rings:
 //! - `aq`: Allocated Queue (indices of enqueued messages)
-//! - `fq1`: Free Queue 1 (block IDs for free index blocks - initially full)
-//! - `fq2`: Free Queue 2 (block IDs that have been allocated)
+//! - `fq1`: Free Queue 1 (block IDs for free index blocks)
+//! - `fq2`: Free Queue 2 (block IDs for allocated index blocks)
 
 use crate::sync::mpsc2::lfring::LFRing;
 
@@ -66,7 +66,7 @@ pub(crate) struct Rx<T> {
 }
 
 /// Result of `Rx::try_recv`.
-pub(crate) enum TryPopResult<T> {
+pub(crate) enum TryDequeueResult<T> {
     /// Successfully returned a value.
     Ok(T),
     /// The queue is empty.
@@ -95,9 +95,9 @@ impl<T> Queue<T> {
     fn new() -> Self {
         unsafe {
             // Initialize the three rings
-            let aq = LFRing::init_empty(SCQD_ORDER);
-            let fq1 = LFRing::init_full(SCQD_ORDER - 2);
-            let fq2 = LFRing::init_empty(SCQD_ORDER - 2);
+            let aq = LFRing::new_empty(SCQD_ORDER);
+            let fq1 = LFRing::new_full(SCQD_ORDER - 2);
+            let fq2 = LFRing::new_empty(SCQD_ORDER - 2);
 
             // Initialize flat index array (identity mapping)
             let idx: Box<[usize]> = (0..TOTAL_SLOTS)
