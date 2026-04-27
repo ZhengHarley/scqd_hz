@@ -16,7 +16,7 @@
 // use std::ptr::{NonNull};
 use std::sync::atomic::{AtomicU64, AtomicI64};
 // use std::sync::atomic::Ordering::{self, AcqRel, Acquire, Release};
-use std::sync::atomic::Ordering::{AcqRel, Acquire, Release};
+use std::sync::atomic::Ordering::{AcqRel, Acquire, Release, Relaxed};
 
 
 // Cache line width constants
@@ -64,17 +64,17 @@ fn lfring_cmp_le(x: u64, y: u64) -> bool {
     ((x.wrapping_sub(y)) as i64) <= 0
 }
 
-#[inline]
-fn lfring_cmp_eq(x: u64, y: u64) -> bool {
-    x == y
-}
+// #[inline]
+// fn lfring_cmp_eq(x: u64, y: u64) -> bool {
+//     x == y
+// }
 
 /// Maps a ring position to an array index with cache-line remapping. 
 /// Assuming LFRING_MIN is not zero
 #[inline]
 fn raw_map(idx: u64, order: usize, n: usize) -> usize {
     let idx_u = idx as usize;
-    (((idx_u & (n - 1)) >> (order - LFRING_MIN)) | ((idx_u << LFRING_MIN) & (n - 1)))
+    ((idx_u & (n - 1)) >> (order - LFRING_MIN)) | ((idx_u << LFRING_MIN) & (n - 1))
 }
 
 #[inline]
@@ -87,8 +87,6 @@ fn pow2(order: usize) -> usize {
     1 << order
 }
 
-/// Threshold calculation helper.
-/// Equivalent to C macro: `__lfring_threshold3(half, n)`
 #[inline]
 fn threshold_value(half: usize, n: usize) -> i64 {
     (half + n - 1) as i64
@@ -128,6 +126,8 @@ impl LFRing {
             array,
         };
 
+        eprintln!("DEBUG: Created Empty Queue with size {n}");
+        
         Box::new(lfq)
         
         /*
@@ -174,71 +174,43 @@ impl LFRing {
         let half = pow2(order);
         let n = half << 1;  
 
-        let mut array_vec = Vec::with_capacity(n);
+        // let mut array_vec = Vec::with_capacity(n);
 
-        // First half: map indices [0..half) to array positions
-        for i in 0..half {
-            let idx = n + raw_map(i as u64, order, half);
-            array_vec.push(AtomicU64::new(idx as u64));
-        }
+        // // First half: map indices [0..half) to array positions
+        // for i in 0..half {
+        //     // let idx = n + raw_map(i as u64, order, half);
+        //     let idx = n + raw_map(i as u64, order + 1, n);
+        //     array_vec.push(AtomicU64::new(idx as u64));
+        // }
         
-        // Second half: mark as empty with -1
-        for _ in half..n {
-            array_vec.push(AtomicU64::new(u64::MAX));
-        }
+        // // Second half: mark as empty with -1
+        // for _ in half..n {
+        //     array_vec.push(AtomicU64::new(u64::MAX));
+        // }
 
-        let array: Box<[AtomicU64]> = array_vec.into_boxed_slice();
+        // let array: Box<[AtomicU64]> = array_vec.into_boxed_slice();
+
+        let array = (0..n)
+            .map(|_| AtomicU64::new(u64::MAX))
+            .collect::<Vec<_>>();
+        let mut array = array.into_boxed_slice();
+
+        for i in 0..half {
+            let mapped = map(i as u64, order, n);
+            let value = (n + raw_map(i as u64, order, half)) as u64;
+            array[mapped].store(value, Relaxed);                        // can Relaxed ordering work here?
+        }
 
         let lfq = LFRing {
             head: AtomicU64::new(0),
-            tail: AtomicU64::new(0),
-            threshold: AtomicI64::new(-1),
+            tail: AtomicU64::new(half as u64),
+            threshold: AtomicI64::new(threshold_value(half, n)),
             array,
         };
 
+        eprintln!("DEBUG: Created Full Queue with size {n}");
+
         Box::new(lfq)
-
-        /*
-        unsafe {
-            // 1) Allocate LFRing on the heap
-            let lfq = std::alloc::alloc(Layout::new::<LFRing>()) as *mut LFRing;
-            let lfq = match NonNull::new(lfq) {
-                Some(lfq) => lfq,
-                None => std::alloc::handle_alloc_error(Layout::new::<LFRing>()),
-            };
-
-            let half = pow2(order);
-            let n = half << 1;  
-
-            // 2) Initialize header
-            LFRing::addr_of_header(lfq).as_ptr().write(LFRingHeader {
-                head: AtomicU64::new(0),
-                tail: AtomicU64::new(half as u64),
-                threshold: AtomicI64::new(threshold_value(half, n)),
-            });
-
-            // 3) Initialize array: first half get mapped indices, second half are empty
-            let mut array_vec = Vec::with_capacity(n);
-            
-            // First half: map indices [0..half) to array positions
-            for i in 0..half {
-                let idx = n + raw_map(i as u64, order, half);
-                array_vec.push(AtomicU64::new(idx as u64));
-            }
-            
-            // Second half: mark as empty with -1
-            for _ in half..n {
-                array_vec.push(AtomicU64::new(u64::MAX));
-            }
-
-            let array: Box<[AtomicU64]> = array_vec.into_boxed_slice();
-            LFRing::addr_of_queue(lfq).as_ptr().write(array);
-
-            // 4) Convert to Box and return
-            Box::from_raw(lfq.as_ptr())
-        }
-        
-         */
 
     }
 
@@ -311,12 +283,13 @@ impl LFRing {
 
         // Exit if queue is empty, either through nonempty parameter or threshold = -1
         if !nonempty && self.threshold.load(Acquire) < 0 {
+            eprintln!("lfring.dequeue(): Queue is empty");
             return LFRING_EMPTY;
         }
 
         loop {
             let head = self.head.fetch_add(1, AcqRel);
-            let hcycle = ((head << 1) | (2 * n as u64 - 1));         
+            let hcycle = (head << 1) | (2 * n as u64 - 1);         
             let hidx = map(head, order, n);
             let mut attempt = 0u32;
 
@@ -367,7 +340,7 @@ impl LFRing {
             // Check if queue is empty
             if !nonempty {
                 let tail = self.tail.load(Acquire);
-                if lfring_cmp_le(tail, (head + 1)) {
+                if lfring_cmp_le(tail, head + 1) {
                     // Queue is at or before our position; try to catch up
                     self.__lfring_catchup(tail, head + 1);
                     self.threshold.fetch_sub(1, AcqRel);

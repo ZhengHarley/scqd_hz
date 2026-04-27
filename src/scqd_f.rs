@@ -13,6 +13,7 @@ use std::alloc::{alloc_zeroed, dealloc, Layout};
 // use std::ptr::NonNull;
 use std::sync::Arc;
 // use std::sync::atomic::{AtomicPtr};
+use std::cell::UnsafeCell;
 
 /// Configuration constants for SCQD-F queue
 const SCQD_INDEX_BLOCK_SIZE: usize = 16;   // Indices per block
@@ -40,9 +41,9 @@ pub(crate) struct Queue<T> {
     aq: Box<LFRing>,    /// Allocated Queue: ring of enqueued index slots
     fq1: Box<LFRing>,   /// Free Queue 1: ring of free index block IDs (initially full)
     fq2: Box<LFRing>,   /// Free Queue 2: ring of allocated index block IDs
-    idx: Box<[usize]>,  /// Index array: flat array of 2^order indices for mapping
+    idx: UnsafeCell<Box<[usize]>>,  /// Index array: flat array of 2^order indices for mapping
                         /// Organized as blocks: idx[block_id * 16 .. block_id * 16 + 16]
-    val: *mut T,        // Value array: flat allocation holding T values
+    val: UnsafeCell<*mut T>,        // Value array: flat allocation holding T values
 }
 
 /// Handle for thread-local operation (per sender/receiver).
@@ -103,6 +104,7 @@ impl<T> Queue<T> {
     fn new(order: usize) -> Self {
         unsafe {
             let total_slots = 1 << order;
+            eprintln!("DEBUG: Queue has size {total_slots}");
 
             // Initialize the three rings
             let aq = LFRing::init_empty(order);
@@ -110,20 +112,24 @@ impl<T> Queue<T> {
             let fq2 = LFRing::init_empty(order - 2);
 
             // Initialize flat index array (identity mapping)
-            let idx: Box<[usize]> = (0..total_slots)
+            let idx_box: Box<[usize]> = (0..total_slots)
                 .map(|i| i)
                 .collect::<Vec<_>>()
                 .into_boxed_slice();
 
+            let idx = UnsafeCell::new(idx_box);
+
             // Allocate data cache
             let layout = Layout::array::<T>(total_slots)
                 .expect("SCQD-F value array layout too large");
-            let val = alloc_zeroed(layout) as *mut T;
+            let val_mem = alloc_zeroed(layout) as *mut T;
 
-            if val.is_null() {
+            if val_mem.is_null() {
                 std::alloc::handle_alloc_error(layout);
                 // ! Error handling is deferred
             }
+
+            let val = UnsafeCell::new(val_mem);
 
             Queue { order, aq, fq1, fq2, idx, val }
         }
@@ -133,11 +139,12 @@ impl<T> Queue<T> {
 impl<T> Drop for Queue<T> {
     fn drop(&mut self) {
         unsafe {
-            if !self.val.is_null() {
+            let p_val = *self.val.get();
+            if !p_val.is_null() {
                 let total_slots = 1 << self.order;
                 let layout = Layout::array::<T>(total_slots)
                     .expect("SCQD-F value array layout too large");
-                dealloc(self.val as *mut u8, layout);
+                dealloc(p_val as *mut u8, layout);
             }
         }
     }
@@ -158,20 +165,22 @@ pub(crate) fn channel<T>(capacity: usize) -> (Tx<T>, Rx<T>) {
     let order = capacity_to_order(capacity);
     
     // Initialize a shared SCQD-F struct
-    let queue = Box::new(Queue::new(order));
-    let queue_ptr = Box::into_raw(queue);
+    let queue = Arc::new(Queue::new(order));
+    eprintln!("DEBUG: Initialized Queue");
 
     // Multiple-Producer Transmit Channel
     let tx = Tx {
-        queue: AtomicPtr::new(queue_ptr),
+        queue: Arc::clone(&queue),
         handle: Handle::new(),
     };
+    eprintln!("DEBUG: Initialized Tx");
 
     // Single-Consumer Receive Channel
     let rx = Rx {
-        queue,
+        queue,                      // May need to perform a clone for this
         handle: Handle::new(),
     };
+    eprintln!("DEBUG: Initialized Rx");
 
     (tx, rx)
 }
@@ -191,32 +200,31 @@ impl<T> Tx<T> {
     /// Returns `Ok(())` if the value was enqueued, or `Err(val)` if the queue is full
     pub(crate) fn push(&mut self, val: T) -> Result<(), T> {
 
+        eprintln!("DEBUG: Pushing a value");
+
         // Attempt to get an index from local cache
         let idx = if self.handle.local_size > 0 {
-            // Get index from local cache
-            self.handle.local_size -= 1;                                    // Confirm that this is supposed to decrement
+            self.handle.local_size -= 1;                                    
             self.handle.owned_cache[self.handle.local_size]
         } else {
-
-            // Get a free index from fbiq
 
             // Get an index block pointer by dequeuing from fq1
             let bidx = self.queue.fq1.dequeue(self.queue.order - 2, false);
             if bidx == usize::MAX {
-                return Err(val);            // Queue is full
+                eprintln!("ERROR: No more bidx in fq1, Queue is empty");
+                return Err(val);            
             }
 
-            // Is there a cleaner way to do this?
-            // Copy 16 indices from the block into the local cache
-            let block_start = bidx << 4;  // bidx * 16
+            let block_start = bidx << 4;  
             for i in 0..16 {
-                self.handle.owned_cache[i] = self.queue.idx[block_start + i];
+                unsafe { self.handle.owned_cache[i] = (*self.queue.idx.get())[block_start + i] };
             }
 
             // Indicate the index block as allocated by enqueuing it to abiq
             let enqueue_ok = self.queue.fq2.enqueue(self.queue.order - 2, bidx, false);
             if !enqueue_ok {
                 // Should not happen; fq2 should have space
+                eprintln!("ERROR: bidx cannot be enqueued into fq2");
                 return Err(val);
             }
 
@@ -227,7 +235,8 @@ impl<T> Tx<T> {
 
         // Store the value in the val array using MaybeUninit to ensure proper cleanup
         unsafe {
-            std::ptr::write(self.queue.val.add(idx), val);
+            let p_val = *self.queue.val.get();
+            std::ptr::write(p_val.add(idx), val);
         }
 
         // Enqueue the index to aq
@@ -237,8 +246,11 @@ impl<T> Tx<T> {
         //       Also, what will happen to the allocated index block in abiq? See below comments. 
         if !enqueue_ok {
             // Enqueue failed; drop the value we just wrote and return the index to cache
+
+            eprintln!("ERROR: idx cannot be enqueued into aq");
             unsafe {
-                let recovered_val = std::ptr::read(self.queue.val.add(idx));
+                let p_val = *self.queue.val.get();
+                let recovered_val = std::ptr::read(p_val.add(idx));
                 self.handle.owned_cache[self.handle.local_size] = idx;
                 self.handle.local_size += 1;
                 return Err(recovered_val);
@@ -294,14 +306,19 @@ impl<T> Rx<T> {
     /// 
     pub(crate) fn pop(&mut self) -> Option<T> {
         
+        eprint!("DEBUG: Popping a value");
+
         // Try to dequeue an index from the allocated queue
         let idx = self.queue.aq.dequeue(self.queue.order, false);
         if idx == usize::MAX {
+            eprintln!("ERROR: No value in aq, queue is empty");
             return None;    // Queue is empty
         }
 
         // Get value from the returned index
-        let val = unsafe { std::ptr::read(self.queue.val.add(idx)) };
+        let val = unsafe { 
+            let p_val = *self.queue.val.get();
+            std::ptr::read(p_val.add(idx)) };
 
         // Add the index to our local cache
         self.handle.owned_cache[self.handle.local_size] = idx;
@@ -315,7 +332,11 @@ impl<T> Rx<T> {
                 // Copy the upper 16 indices back into the idx array
                 let block_start = bidx << 4;
                 for i in 0..SCQD_INDEX_BLOCK_SIZE {
-                    self.queue.idx[block_start + i] = self.handle.owned_cache[SCQD_INDEX_BLOCK_SIZE + i];
+
+                    unsafe{
+                        (*self.queue.idx.get())[block_start + i] = self.handle.owned_cache[SCQD_INDEX_BLOCK_SIZE + i];
+                    }
+                    // self.queue.idx[block_start + i] = self.handle.owned_cache[SCQD_INDEX_BLOCK_SIZE + i];
                 }
 
                 // Reset local_size to 16 (lower half remains)

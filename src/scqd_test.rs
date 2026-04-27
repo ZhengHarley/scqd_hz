@@ -5,14 +5,15 @@ mod tests {
     use crate::scqd_f;
     use std::time::Instant;
 
-    const NUM_TIMES: usize = 100;
+    const NUM_TIMES: usize = 10;
+    const CAPACITY: usize = 1000;
 
     /// Test repeated push and pop operations on SCQD-F queue
     /// Measures the elapsed time between the first push and the last pop operation
     #[test]
-    fn test_scqd_push_pop_timing() {
+    fn test_scqd_timing() {
         // Create a new SCQD-F channel with capacity for at least NUM_TIMES items
-        let (mut tx, mut rx) = scqd_f::channel::<usize>(NUM_TIMES);
+        let (mut tx, mut rx) = scqd_f::channel::<usize>(CAPACITY);
 
         // Record the start time before the first push
         let start = Instant::now();

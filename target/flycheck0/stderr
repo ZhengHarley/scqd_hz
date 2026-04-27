@@ -1,94 +1,12 @@
-   0.025631709s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: fingerprint error for scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("scqd_hz", ["lib"], "/home/harleyz/Programs/niko/scqd_hz/src/lib.rs", Edition2024) }
-   0.025645607s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-87e469db4a93ab73/lib-scqd_hz`
-
-Caused by:
-    No such file or directory (os error 2)
-
-Stack backtrace:
-   0: cargo_util::paths::read_bytes
-   1: cargo_util::paths::read
-   2: cargo::core::compiler::fingerprint::_compare_old_fingerprint
-   3: cargo::core::compiler::fingerprint::prepare_target
-   4: cargo::core::compiler::compile
-   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
-   6: cargo::ops::cargo_compile::compile_ws
-   7: cargo::ops::cargo_compile::compile_with_exec
-   8: cargo::ops::cargo_compile::compile
-   9: cargo::commands::check::exec
-  10: <cargo::cli::Exec>::exec
-  11: cargo::main
-  12: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
-  13: std::rt::lang_start::<()>::{closure#0}
-  14: core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &F>::call_once
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/core/src/ops/function.rs:287:21
-  15: std::panicking::catch_unwind::do_call
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:581:40
-  16: std::panicking::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:544:19
-  17: std::panic::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panic.rs:359:14
-  18: std::rt::lang_start_internal::{{closure}}
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/rt.rs:175:24
-  19: std::panicking::catch_unwind::do_call
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:581:40
-  20: std::panicking::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:544:19
-  21: std::panic::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panic.rs:359:14
-  22: std::rt::lang_start_internal
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/rt.rs:171:5
-  23: main
-  24: __libc_start_call_main
-             at ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
-  25: __libc_start_main_impl
-             at ./csu/../csu/libc-start.c:392:3
-  26: <unknown>
-   0.076154615s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: fingerprint error for scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("scqd_hz", ["lib"], "/home/harleyz/Programs/niko/scqd_hz/src/lib.rs", Edition2024) }
-   0.076169645s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:     err: failed to read `/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-e1ecbddb8d69dbea/test-lib-scqd_hz`
-
-Caused by:
-    No such file or directory (os error 2)
-
-Stack backtrace:
-   0: cargo_util::paths::read_bytes
-   1: cargo_util::paths::read
-   2: cargo::core::compiler::fingerprint::_compare_old_fingerprint
-   3: cargo::core::compiler::fingerprint::prepare_target
-   4: cargo::core::compiler::compile
-   5: <cargo::core::compiler::build_runner::BuildRunner>::compile
-   6: cargo::ops::cargo_compile::compile_ws
-   7: cargo::ops::cargo_compile::compile_with_exec
-   8: cargo::ops::cargo_compile::compile
-   9: cargo::commands::check::exec
-  10: <cargo::cli::Exec>::exec
-  11: cargo::main
-  12: std::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
-  13: std::rt::lang_start::<()>::{closure#0}
-  14: core::ops::function::impls::<impl core::ops::function::FnOnce<A> for &F>::call_once
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/core/src/ops/function.rs:287:21
-  15: std::panicking::catch_unwind::do_call
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:581:40
-  16: std::panicking::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:544:19
-  17: std::panic::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panic.rs:359:14
-  18: std::rt::lang_start_internal::{{closure}}
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/rt.rs:175:24
-  19: std::panicking::catch_unwind::do_call
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:581:40
-  20: std::panicking::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panicking.rs:544:19
-  21: std::panic::catch_unwind
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/panic.rs:359:14
-  22: std::rt::lang_start_internal
-             at /rustc/01f6ddf7588f42ae2d7eb0a2f21d44e8e96674cf/library/std/src/rt.rs:171:5
-  23: main
-  24: __libc_start_call_main
-             at ./csu/../sysdeps/nptl/libc_start_call_main.h:58:16
-  25: __libc_start_main_impl
-             at ./csu/../csu/libc-start.c:392:3
-  26: <unknown>
+   0.018815217s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: stale: changed "/home/harleyz/Programs/niko/scqd_hz/src/lfring.rs"
+   0.018824748s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:           (vs) "/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-87e469db4a93ab73/dep-lib-scqd_hz"
+   0.018827109s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 1777315094, nanos: 702995651 } < FileTime { seconds: 1777315147, nanos: 10748562 }
+   0.018858896s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: fingerprint dirty for scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz)/Check { test: false }/TargetInner { name_inferred: true, ..: lib_target("scqd_hz", ["lib"], "/home/harleyz/Programs/niko/scqd_hz/src/lib.rs", Edition2024) }
+   0.018869571s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-87e469db4a93ab73/dep-lib-scqd_hz", reference_mtime: FileTime { seconds: 1777315094, nanos: 702995651 }, stale: "/home/harleyz/Programs/niko/scqd_hz/src/lfring.rs", stale_mtime: FileTime { seconds: 1777315147, nanos: 10748562 } }))
+   0.020124755s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: stale: changed "/home/harleyz/Programs/niko/scqd_hz/src/lfring.rs"
+   0.020128834s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:           (vs) "/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-e1ecbddb8d69dbea/dep-test-lib-scqd_hz"
+   0.020130849s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:                FileTime { seconds: 1777315094, nanos: 702995651 } < FileTime { seconds: 1777315147, nanos: 10748562 }
+   0.020146043s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint: fingerprint dirty for scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz)/Check { test: true }/TargetInner { name_inferred: true, ..: lib_target("scqd_hz", ["lib"], "/home/harleyz/Programs/niko/scqd_hz/src/lib.rs", Edition2024) }
+   0.020150910s  INFO prepare_target{force=false package_id=scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz) target="scqd_hz"}: cargo::core::compiler::fingerprint:     dirty: FsStatusOutdated(StaleItem(ChangedFile { reference: "/home/harleyz/Programs/niko/scqd_hz/target/debug/.fingerprint/scqd_hz-e1ecbddb8d69dbea/dep-test-lib-scqd_hz", reference_mtime: FileTime { seconds: 1777315094, nanos: 702995651 }, stale: "/home/harleyz/Programs/niko/scqd_hz/src/lfring.rs", stale_mtime: FileTime { seconds: 1777315147, nanos: 10748562 } }))
     Checking scqd_hz v0.1.0 (/home/harleyz/Programs/niko/scqd_hz)
-error: could not compile `scqd_hz` (lib) due to 3 previous errors; 3 warnings emitted
-warning: build failed, waiting for other jobs to finish...
-error: could not compile `scqd_hz` (lib test) due to 3 previous errors; 3 warnings emitted
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.06s
